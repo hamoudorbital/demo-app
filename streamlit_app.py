@@ -233,7 +233,7 @@ def main():
         with st.spinner("Generating constellation TLE data..."):
             try:
                 tle_lines, constellation_data = generate_constellation_tle(
-                    altitude, inclination, num_planes, sats_per_plane, walker_F
+                    altitude, inclination, num_planes, sats_per_plane, walker_F, constellation_name
                 )
 
                 # Create tabs for different outputs
