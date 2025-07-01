@@ -33,7 +33,7 @@ def generate_random_launch_info():
 
     return launch_year % 100, launch_number, launch_piece
 
-def generate_constellation_tle(altitude, inclination, num_planes, sats_per_plane, walker_F):
+def generate_constellation_tle(altitude, inclination, num_planes, sats_per_plane, walker_F, constellation_name="CONSTELLATION"):
     """
     Generate TLE data for a Walker constellation
 
@@ -43,6 +43,7 @@ def generate_constellation_tle(altitude, inclination, num_planes, sats_per_plane
     - num_planes: Number of orbital planes
     - sats_per_plane: Number of satellites per plane
     - walker_F: Walker F parameter (phasing factor)
+    - constellation_name: Name for the constellation satellites
 
     Returns:
     - tle_lines: List of TLE lines
@@ -76,11 +77,9 @@ def generate_constellation_tle(altitude, inclination, num_planes, sats_per_plane
     tle_lines = []
     sat_data = []
 
-    # Generate diverse NORAD IDs (avoid clustering around 90000)
-    base_ids = list(range(90000, 99999))
-    random.shuffle(base_ids)
-    norad_ids = base_ids[:total_sats]
-
+    # Generate NORAD IDs starting from random number in 10000-90000 range, then sequential
+    base_norad_id = random.randint(10000, 90000)
+    
     sat_counter = 0
 
     for plane in range(num_planes):
@@ -95,12 +94,15 @@ def generate_constellation_tle(altitude, inclination, num_planes, sats_per_plane
             in_plane_spacing = 360 / sats_per_plane
             M = (sat * in_plane_spacing + walker_phase_offset) % 360
 
-            # Get unique identifiers for this satellite
-            sat_number = norad_ids[sat_counter]
+            # Sequential NORAD ID starting from random base
+            sat_number = base_norad_id + sat_counter
             launch_year, launch_number, launch_piece = generate_random_launch_info()
 
-            # Satellite name
-            sat_name = f"KUIPER_{plane+1:03d}_{sat+1:02d}"
+            # Clean constellation name (remove special characters, convert to uppercase)
+            clean_name = ''.join(c for c in constellation_name if c.isalnum() or c in ['_', '-']).upper()
+            
+            # Satellite name in format: NAME###-##
+            sat_name = f"{clean_name}{plane+1:03d}-{sat+1:02d}"
 
             # Create epoch string
             epoch_str = f"{epoch_year:02d}{epoch_day:012.8f}"
@@ -154,7 +156,8 @@ def generate_constellation_tle(altitude, inclination, num_planes, sats_per_plane
         'phase_unit': phase_unit,
         'epoch_year': epoch_year,
         'epoch_day': epoch_day,
-        'satellite_data': sat_data
+        'satellite_data': sat_data,
+        'base_norad_id': base_norad_id
     }
 
     return tle_lines, constellation_data
@@ -162,76 +165,87 @@ def generate_constellation_tle(altitude, inclination, num_planes, sats_per_plane
 def draw_earth_map(ax):
     """Draw a simple Earth map background"""
     
-    # Create longitude and latitude grids
-    lon = np.linspace(-180, 180, 360)
-    lat = np.linspace(-90, 90, 180)
-    
-    # Create basic continent outlines (simplified)
-    # This is a very basic representation
-    
-    # Set ocean color (light blue)
-    ax.set_facecolor('#E6F3FF')
+    # Set ocean color (dark blue for better contrast)
+    ax.set_facecolor('#003366')
     
     # Draw equator
-    ax.axhline(y=0, color='gray', linestyle='--', alpha=0.5, linewidth=1)
+    ax.axhline(y=0, color='yellow', linestyle='-', alpha=0.7, linewidth=2, label='Equator')
     
     # Draw tropics
-    ax.axhline(y=23.5, color='gray', linestyle=':', alpha=0.3, linewidth=0.8)  # Tropic of Cancer
-    ax.axhline(y=-23.5, color='gray', linestyle=':', alpha=0.3, linewidth=0.8)  # Tropic of Capricorn
+    ax.axhline(y=23.5, color='orange', linestyle='--', alpha=0.6, linewidth=1.5, label='Tropic of Cancer')
+    ax.axhline(y=-23.5, color='orange', linestyle='--', alpha=0.6, linewidth=1.5, label='Tropic of Capricorn')
     
     # Draw Arctic/Antarctic circles
-    ax.axhline(y=66.5, color='gray', linestyle=':', alpha=0.3, linewidth=0.8)
-    ax.axhline(y=-66.5, color='gray', linestyle=':', alpha=0.3, linewidth=0.8)
+    ax.axhline(y=66.5, color='cyan', linestyle=':', alpha=0.5, linewidth=1)
+    ax.axhline(y=-66.5, color='cyan', linestyle=':', alpha=0.5, linewidth=1)
     
     # Draw prime meridian and international date line
-    ax.axvline(x=0, color='gray', linestyle='--', alpha=0.3, linewidth=0.8)
-    ax.axvline(x=180, color='gray', linestyle='--', alpha=0.3, linewidth=0.8)
-    ax.axvline(x=-180, color='gray', linestyle='--', alpha=0.3, linewidth=0.8)
+    ax.axvline(x=0, color='white', linestyle='--', alpha=0.4, linewidth=1)
+    ax.axvline(x=180, color='white', linestyle='--', alpha=0.4, linewidth=1)
+    ax.axvline(x=-180, color='white', linestyle='--', alpha=0.4, linewidth=1)
     
-    # Simple continent representations (very basic rectangles/polygons)
+    # Simple continent representations with better colors
     # North America
     na_lon = [-170, -170, -50, -50, -170]
     na_lat = [70, 15, 15, 70, 70]
-    ax.fill(na_lon, na_lat, color='#90EE90', alpha=0.6, label='Continents')
+    ax.fill(na_lon, na_lat, color='#228B22', alpha=0.8, edgecolor='black', linewidth=0.5)
     
     # South America
     sa_lon = [-85, -85, -35, -35, -85]
     sa_lat = [12, -55, -55, 12, 12]
-    ax.fill(sa_lon, sa_lat, color='#90EE90', alpha=0.6)
+    ax.fill(sa_lon, sa_lat, color='#228B22', alpha=0.8, edgecolor='black', linewidth=0.5)
     
     # Europe
     eu_lon = [-15, -15, 70, 70, -15]
     eu_lat = [70, 35, 35, 70, 70]
-    ax.fill(eu_lon, eu_lat, color='#90EE90', alpha=0.6)
+    ax.fill(eu_lon, eu_lat, color='#228B22', alpha=0.8, edgecolor='black', linewidth=0.5)
     
     # Africa
     af_lon = [-20, -20, 55, 55, -20]
     af_lat = [35, -35, -35, 35, 35]
-    ax.fill(af_lon, af_lat, color='#90EE90', alpha=0.6)
+    ax.fill(af_lon, af_lat, color='#228B22', alpha=0.8, edgecolor='black', linewidth=0.5)
     
     # Asia
     as_lon = [70, 70, 180, 180, 70]
     as_lat = [70, 5, 5, 70, 70]
-    ax.fill(as_lon, as_lat, color='#90EE90', alpha=0.6)
+    ax.fill(as_lon, as_lat, color='#228B22', alpha=0.8, edgecolor='black', linewidth=0.5)
     
     # Australia
     au_lon = [110, 110, 155, 155, 110]
     au_lat = [-10, -45, -45, -10, -10]
-    ax.fill(au_lon, au_lat, color='#90EE90', alpha=0.6)
+    ax.fill(au_lon, au_lat, color='#228B22', alpha=0.8, edgecolor='black', linewidth=0.5)
     
     # Antarctica (simplified)
     ant_lon = [-180, 180, 180, -180, -180]
     ant_lat = [-60, -60, -90, -90, -60]
-    ax.fill(ant_lon, ant_lat, color='white', alpha=0.8)
+    ax.fill(ant_lon, ant_lat, color='white', alpha=0.9, edgecolor='black', linewidth=0.5)
     
     # Add grid
-    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
+    ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5, color='white')
     
     # Set limits and labels
     ax.set_xlim(-180, 180)
     ax.set_ylim(-90, 90)
-    ax.set_xlabel('Longitude (degrees)')
-    ax.set_ylabel('Latitude (degrees)')
+    ax.set_xlabel('Longitude (degrees)', color='white')
+    ax.set_ylabel('Latitude (degrees)', color='white')
+    
+    # Set tick colors
+    ax.tick_params(colors='white')
+    
+    # Add major cities for reference
+    cities = {
+        'New York': (-74, 40.7),
+        'London': (0, 51.5),
+        'Tokyo': (139.7, 35.7),
+        'Sydney': (151.2, -33.9),
+        'Cairo': (31.2, 30.0),
+        'Sao Paulo': (-46.6, -23.5)
+    }
+    
+    for city, (lon, lat) in cities.items():
+        ax.plot(lon, lat, 'o', color='red', markersize=4, alpha=0.8)
+        ax.annotate(city, (lon, lat), xytext=(5, 5), textcoords='offset points', 
+                   color='white', fontsize=8, alpha=0.7)
 
 def create_constellation_plots(constellation_data):
     """Create visualization plots for the constellation"""
@@ -280,14 +294,23 @@ def create_constellation_plots(constellation_data):
         lats.append(lat)
         plane_colors.append(sat['plane'])
     
-    # Plot satellites on Earth map
-    scatter2 = ax2.scatter(lons, lats, c=plane_colors, cmap='tab20', 
-                          alpha=0.8, s=25, edgecolors='black', linewidth=0.5)
-    ax2.set_title(f'Ground Track Pattern on Earth Map\nWalker {constellation_data["total_satellites"]}'
-                 f'/{constellation_data["num_planes"]}/{constellation_data["walker_F"]}')
+    # Plot satellites on Earth map with high visibility
+    scatter2 = ax2.scatter(lons, lats, c=plane_colors, cmap='Set1', 
+                          alpha=1.0, s=60, edgecolors='white', linewidth=2,
+                          marker='*', zorder=10)
+    ax2.set_title(f'Satellite Positions on Earth Map\nWalker {constellation_data["total_satellites"]}'
+                 f'/{constellation_data["num_planes"]}/{constellation_data["walker_F"]}',
+                 color='white', fontweight='bold')
     
     # Add colorbar for plane numbers
     cbar2 = plt.colorbar(scatter2, ax=ax2, label='Plane Number')
+    cbar2.ax.yaxis.label.set_color('white')
+    cbar2.ax.tick_params(colors='white')
+    
+    # Add satellite count text
+    ax2.text(0.02, 0.02, f'Total Satellites: {len(lons)}', 
+             transform=ax2.transAxes, color='white', fontweight='bold',
+             bbox=dict(boxstyle='round', facecolor='black', alpha=0.7))
 
     # Plot 3: Satellites per Plane
     plane_counts = df['plane'].value_counts().sort_index()
@@ -350,19 +373,8 @@ Distribution Statistics:
 TLE Format Details:
 - Epoch year: {constellation_data['epoch_year']:02d}
 - Epoch day: {constellation_data['epoch_day']:.8f}
-- NORAD ID range: Randomized (90000-99999)
+- NORAD ID range: {constellation_data['base_norad_id']}-{constellation_data['base_norad_id'] + constellation_data['total_satellites'] - 1} (Sequential)
 - Launch info: Randomized for diversity
 - Line ending: CR+LF (Windows compatible)
-
-NCAT Configuration Recommendations:
-- Min el angle UT [°]: 25
-- Min el angle GW [°]: 10
-- ISLs: None (or Disabled)
-
-Note: Elevation angles affect coverage analysis results!
-- UT (User Terminal): 25° balances coverage vs link quality
-- GW (Gateway): 10° allows longer satellite visibility
-- Lower angles = larger coverage area but weaker signals
-- Higher angles = smaller coverage area but stronger signals
 """
     return report
