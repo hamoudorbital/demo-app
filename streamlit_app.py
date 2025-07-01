@@ -32,7 +32,7 @@ def generate_random_constellation_name():
 def get_random_parameters():
     """Generate random but realistic constellation parameters"""
     # Random altitude between 400-1200 km (typical LEO range)
-    altitude = random.randint(40, 120) * 10  # 400-1200 in steps of 10
+    altitude = random.randint(400, 1200)
     
     # Random inclination - common values
     inclinations = [28.5, 45.0, 53.0, 63.4, 70.0, 85.0, 97.4]  # Common orbital inclinations
@@ -136,8 +136,17 @@ def main():
         st.session_state.constellation_name = generate_random_constellation_name()
         st.rerun()
 
-    # Input widgets with random defaults
-    altitude = st.sidebar.slider(
+    # Constellation name input (editable)
+    constellation_name = st.sidebar.text_input(
+        "Constellation Name",
+        value=st.session_state.constellation_name,
+        help="Custom name for your constellation"
+    )
+    # Update session state if name is changed
+    st.session_state.constellation_name = constellation_name
+
+    # Input widgets - changed altitude and inclination to number inputs
+    altitude = st.sidebar.number_input(
         "Altitude (km)",
         min_value=200,
         max_value=2000,
@@ -146,7 +155,7 @@ def main():
         help="Satellite orbital altitude above Earth's surface"
     )
 
-    inclination = st.sidebar.slider(
+    inclination = st.sidebar.number_input(
         "Inclination (degrees)",
         min_value=0.0,
         max_value=180.0,
@@ -181,9 +190,6 @@ def main():
         step=1,
         help="Walker constellation phasing factor"
     )
-
-    # Display current constellation name
-    st.sidebar.markdown(f"**Constellation Name:** `{st.session_state.constellation_name}`")
 
     # Generate button
     if st.sidebar.button("🚀 Generate Constellation", type="primary"):
@@ -247,7 +253,7 @@ def main():
                     st.download_button(
                         label="📥 Download Plots (PNG)",
                         data=buf.getvalue(),
-                        file_name=f"{st.session_state.constellation_name}_plots.png",
+                        file_name=f"{constellation_name}_plots.png",
                         mime="image/png"
                     )
 
@@ -259,12 +265,12 @@ def main():
                     preview_lines = tle_lines[:15]  # 5 satellites * 3 lines each
                     st.code('\n'.join(preview_lines), language='text')
 
-                    # Download TLE file with random name
+                    # Download TLE file with custom name
                     tle_content = generate_tle_file_content(tle_lines)
                     st.download_button(
                         label="📥 Download Complete TLE File (.txt)",
                         data=tle_content,
-                        file_name=f"{st.session_state.constellation_name}_{total_sats}sats.txt",
+                        file_name=f"{constellation_name}_{total_sats}sats.txt",
                         mime="text/plain"
                     )
 
@@ -276,11 +282,11 @@ def main():
                     report = create_validation_report(constellation_data)
                     st.text(report)
 
-                    # Download report with random name
+                    # Download report with custom name
                     st.download_button(
                         label="📥 Download Report (.txt)",
                         data=report,
-                        file_name=f"{st.session_state.constellation_name}_report.txt",
+                        file_name=f"{constellation_name}_report.txt",
                         mime="text/plain"
                     )
 
@@ -309,12 +315,12 @@ def main():
                         st.markdown("**Sample Satellite Data:**")
                         st.dataframe(df[['name', 'plane', 'norad_id', 'raan', 'mean_anomaly']].head(10))
 
-                    # Full data download with random name
+                    # Full data download with custom name
                     csv_data = df.to_csv(index=False)
                     st.download_button(
                         label="📥 Download Full Satellite Data (.csv)",
                         data=csv_data,
-                        file_name=f"{st.session_state.constellation_name}_data.csv",
+                        file_name=f"{constellation_name}_data.csv",
                         mime="text/csv"
                     )
 
@@ -337,12 +343,14 @@ def main():
         - 📄 **Multiple Export Formats** - TLE files, reports, and CSV data
         - ✅ **NCAT Compatible** - Proper formatting with CR+LF line endings
         - 🎲 **Random Parameters** - Starts with randomized constellation parameters
+        - ✏️ **Editable Constellation Name** - Customize your constellation name
 
         #### How to Use:
         1. **Review random parameters** in the sidebar (or click "Randomize" for new ones)
-        2. **Adjust parameters** as needed (altitude, inclination, planes, etc.)
-        3. **Click "Generate Constellation"** to create your TLE data
-        4. **Download files** for use in NCAT or other tools
+        2. **Edit constellation name** if desired
+        3. **Adjust parameters** as needed (altitude, inclination, planes, etc.)
+        4. **Click "Generate Constellation"** to create your TLE data
+        5. **Download files** for use in NCAT or other tools
 
         #### Parameter Guidelines:
         - **Altitude**: 200-2000 km (400-1200 km is typical for LEO constellations)
