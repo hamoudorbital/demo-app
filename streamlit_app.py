@@ -51,54 +51,8 @@ def get_random_parameters():
     
     return altitude, inclination, num_planes, sats_per_plane, walker_F
 
-# Password protection
-def check_password():
-    """Returns True if password is correct"""
-
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == "SUN2025":  # Change this password
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # Don't store password
-        else:
-            st.session_state["password_correct"] = False
-
-    if "password_correct" not in st.session_state:
-        # First run, show input for password
-        st.markdown("### 🛰️ TLE Constellation Generator")
-        st.markdown("Enter password to access the application:")
-        st.text_input(
-            "Password",
-            type="password",
-            on_change=password_entered,
-            key="password"
-        )
-
-        st.info("💡 **For team members**: Contact admin for access password")
-        return False
-
-    elif not st.session_state["password_correct"]:
-        # Password not correct, show input + error
-        st.markdown("### 🛰️ TLE Constellation Generator")
-        st.text_input(
-            "Password",
-            type="password",
-            on_change=password_entered,
-            key="password"
-        )
-        st.error("😞 Password incorrect. Please try again.")
-        return False
-
-    else:
-        # Password correct
-        return True
-
 def main():
     """Main application"""
-
-    # Check password first
-    if not check_password():
-        return
 
     # Initialize random parameters if not already set
     if 'random_params_set' not in st.session_state:
